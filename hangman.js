@@ -8,6 +8,7 @@ const spotify = new Spotify(keys.spotifyKeys);
 const word = require("./word.js");
 const letter = require("./letter.js");
 const clear = require('clear');
+const CFonts = require('cfonts');
 const _ = require('underscore');
 
 function hangmanGame()
@@ -17,19 +18,16 @@ function hangmanGame()
     this.lettersInWord = [];
     this.wrongGuessedLetter = [];
     this.randomizeNum = -1;
-    this.remaining = 10;
+    this.remaining = 8;
     this.error_message = "";
     this.init = function () {
-        this.remaining = 10;
+        this.remaining = 8;
         this.wrongGuessedLetter = [];
     };
     this.getWords = function () {
         return new Promise((resolve, reject) => {
             spotify.clientCredentialsGrant()
                 .then(function(data) {
-                    //console.log('The access token expires in ' + data.body['expires_in']);
-                    //console.log('The access token is ' + data.body['access_token']);
-                    // Save the access token for future calls
                     spotify.setAccessToken(data.body['access_token']);
 
                     spotify.searchTracks("christmas jazz")
@@ -45,7 +43,7 @@ function hangmanGame()
                             that.storeLetter(that.questionArr);
                             resolve();
                         }, function(err) {
-                            console.log(err);
+                            reject(err);
                         });
                 }, function(err) {
                     console.log('Something went wrong when retrieving an access token', err);
@@ -59,8 +57,15 @@ function hangmanGame()
             for(let j=0;j<question_array[i].title.length;j++)
             {
                 song_letter.letters_in_word.push(question_array[i].title[j]);
-                if(question_array[i].title[j] !== " ") song_letter.underscore_letter.push("_");
-                else song_letter.underscore_letter.push(" ");
+                if(question_array[i].title[j] !== " ")
+                {
+                    if(/[-!$%^&*()_+|~=`{}\[\]:";'<>?,.\/]/.test(question_array[i].title[j])) song_letter.underscore_letter.push(question_array[i].title[j]);
+                    else song_letter.underscore_letter.push("_");
+                }
+                else
+                {
+                    song_letter.underscore_letter.push(" ");
+                }
             }
             this.lettersInWord.push(song_letter);
         }
@@ -79,13 +84,21 @@ function hangmanGame()
             wrongLetters += this.wrongGuessedLetter[j].toUpperCase();
         }
 
-        console.log("Question: ");
-        console.log(str_question);
-        console.log("Remaining guess: " + this.remaining);
-        console.log("Wrong guessed letter: ");
-        console.log(wrongLetters.split("").join(","));
-        console.log(this.error_message);
-        this.displayPromptInput(underscore_letter_array);
+        if(this.remaining>0)
+        {
+            console.log("What song is this? ");
+            console.log(str_question);
+            console.log("Remaining wrong guess: " + this.remaining);
+            console.log("Wrong guessed letter: ");
+            console.log(wrongLetters.split("").join(","));
+            console.log(this.error_message);
+            this.displayPromptInput(underscore_letter_array);
+        }
+        else
+        {
+            clear();
+            this.loseGame();
+        }
     };
     this.playAgain = function () {
         inquirer
@@ -105,7 +118,17 @@ function hangmanGame()
                 }
                 else
                 {
-                    console.log("Thank you for playing!");
+                    clear();
+                    CFonts.say('Thank you for playing!', {
+                        font: 'block',        //define the font face
+                        align: 'left',        //define text alignment
+                        colors: ['white'],    //define all colors
+                        background: 'Black',  //define the background color
+                        letterSpacing: 1,     //define letter spacing
+                        lineHeight: 1,        //define the line height
+                        space: true,          //define if the output text should have empty lines on top and on the bottom
+                        maxLength: '0'        //define how many character can be on one line
+                    });
                 }
             });
     };
@@ -116,13 +139,33 @@ function hangmanGame()
         {
             str_question += letter_array.underscore_letter[i];
         }
-        console.log(str_question);
-        console.log("You Win!");
+        CFonts.say(str_question, {
+            font: 'block',
+            align: 'left',
+            colors: ['white'],
+            background: 'Black',
+            letterSpacing: 1,
+            lineHeight: 1,
+            space: true,
+            maxLength: '0'
+        });
+
+        console.log("You're Right!");
+
         this.playAgain();
     };
     this.loseGame = function () {
         clear();
-        console.log("You Lose!");
+        CFonts.say('You Lose!', {
+            font: 'block',
+            align: 'left',
+            colors: ['white'],
+            background: 'Black',
+            letterSpacing: 1,
+            lineHeight: 1,
+            space: true,
+            maxLength: '0'
+        });
         this.playAgain();
     };
     this.checkLetter = function (letter_array, userLetter) {
@@ -152,7 +195,6 @@ function hangmanGame()
             {
                 this.error_message = "You already guessed that letter. Try other letters!";
             }
-            if(this.remaining === 0) this.loseGame();
         }
     };
     this.checkUnderscore = function (letter_array) {
@@ -164,27 +206,23 @@ function hangmanGame()
             .prompt([
                 {
                     message: "Guess a letter",
-                    name: "letter",
-                    validate: function (value) {
-                        if(value.length>1 || !value.match("^[a-zA-Z\(\)]+$"))
-                        {
-                            that.error_message = "Invalid letter. Try other letters!";
-                            that.displayQuestion(letter_array);
-                            return false;
-                        }
-                        else
-                        {
-                            return true;
-                        }
-                    }
+                    name: "letter"
                 }
             ])
             .then(function(answer) {
                 //that.randomizeNum = Math.floor(Math.random()*that.questionArr.length) + 1;
-                that.checkLetter(letter_array, answer.letter);
-                let allUnderscore = that.checkUnderscore(letter_array);
-                if(allUnderscore === true) that.winGame(letter_array);
-                else that.displayQuestion(letter_array);
+                if(answer.letter.length>1 || answer.letter === "" || answer.letter === " " || /[-!$%^&*()_+|~=`{}\[\]:";'<>?,.@#\/]/.test(answer.letter) || /[0-9]/.test(answer.letter))
+                {
+                    that.error_message = "Invalid letter. Try other letters!";
+                    that.displayQuestion(letter_array);
+                }
+                else
+                {
+                    that.checkLetter(letter_array, answer.letter);
+                    let allUnderscore = that.checkUnderscore(letter_array);
+                    if(allUnderscore === true) that.winGame(letter_array);
+                    else that.displayQuestion(letter_array);
+                }
             });
     };
     this.startGame = function () {
@@ -205,7 +243,16 @@ let load = setInterval(function () {
 newGame.getWords().then(v => {
     clearInterval(load);
     clear();
-    console.log("WELCOME TO HANG-MANIA (CHRISTMAS EDITION)!");
+    CFonts.say('HANG-MANIA (XMAS EDITION)', {
+        font: 'block',
+        align: 'left',
+        colors: ['white'],
+        background: 'Black',
+        letterSpacing: 1,
+        lineHeight: 1,
+        space: true,
+        maxLength: '0'
+    });
     inquirer
         .prompt([
             {
@@ -227,122 +274,3 @@ newGame.getWords().then(v => {
             }
         });
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//clear() <-- to clear command prompt screen
-
-//--------//
-//BACK UP//
-//------//
-
-// let randomNum = Math.floor(Math.random()*(20-counter)) + 1;
-// counter++;
-// let haha;
-// haha = data.body.tracks.items[randomNum].name;
-// if(haha !== null)resolve(haha);
-// else reject("Not found!");
-// data.body.tracks.items.splice(randomNum, 1);
-
-// let questionArr = [];
-// let lettersInWord = [];
-// let randomizeNum = -1;
-// let remaining = 8;
-
-// function storeLetter(question_array) {
-//
-// }
-
-// function getWords()
-// {
-//     return new Promise((resolve, reject) => {
-//         spotify.clientCredentialsGrant()
-//             .then(function(data) {
-//                 //console.log('The access token expires in ' + data.body['expires_in']);
-//                 //console.log('The access token is ' + data.body['access_token']);
-//                 // Save the access token for future calls
-//                 spotify.setAccessToken(data.body['access_token']);
-//
-//                 spotify.searchTracks("christmas jazz")
-//                     .then(function(data) {
-//                         let limit = data.body.tracks.limit;
-//                         for(let i=0;i<limit;i++)
-//                         {
-//                             let song = new word.Word();
-//                             song.title = data.body.tracks.items[i].name.replace("'", "");
-//                             song.titleLength = song.title.length;
-//                             questionArr.push(song);
-//                         }
-//                         storeLetter(questionArr);
-//                         // let randomNum = Math.floor(Math.random()*(20-counter)) + 1;
-//                         // counter++;
-//                         // let haha;
-//                         // haha = data.body.tracks.items[randomNum].name;
-//                         // if(haha !== null)resolve(haha);
-//                         // else reject("Not found!");
-//                         // data.body.tracks.items.splice(randomNum, 1);
-//                     }, function(err) {
-//                         console.log(err);
-//                     });
-//             }, function(err) {
-//                 console.log('Something went wrong when retrieving an access token', err);
-//             });
-//     })
-// }
-
-// function displayQuestion(underscore_letter_array) {
-// }
-
-
-
-// function startGame() {
-//       randomizeNum = Math.floor(Math.random()*questionArr.length) + 1;
-//       displayQuestion(lettersInWord[randomizeNum]);
-//       displayPromptInput();
-// }
-
-// function Word(){
-//     //let that = this;//You need to save a reference to the context where the setTimeout function call is made, because setTimeout executes the function with this pointing to the global object
-//     spotifyRandomize().then(v =>{
-//         this.question_word = v;
-//         console.log(this.question_word);
-//         }, e => {console.log(e)});
-// }
-
-// let question = new Word();
-// console.log(question);
-// setTimeout(function() {
-//     console.log(question);
-// }, 1500);
-
-// getQuestion().then(v => {
-//     setTimeout(function () {
-//         console.log(questionArr);
-//     }, 3000);
-// }, e => {console.log(e)});
