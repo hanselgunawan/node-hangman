@@ -52,3 +52,7 @@ Hang-Mania is a NodeJS app where user can play hangman by using their terminal.
 ![](https://imgur.com/ZCPjG9F.gif)
 ### Wrong Answer
 ![](https://imgur.com/lmsILy7.gif)
+
+## Contact Me
+* E-mail: hanselgunawan94@gmail.com
+* LinkedIn: https://www.linkedin.com/in/hanselbtritama
