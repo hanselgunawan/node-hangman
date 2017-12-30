@@ -41,8 +41,14 @@ Hang-Mania is a NodeJS app where user can play hangman by using their terminal.
 
 ## Demo
 ### Guess The Right Letter
+![](https://imgur.com/FiUGsRS.gif)
 ### Guess The Wrong Letter
+![](https://imgur.com/fGNXRyj.gif)
 ### Guess An Invalid Letter
+![](https://imgur.com/2p14ng7.gif)
 ### Guess The Same Wrong Letter
+![](https://imgur.com/8o7HATS.gif)
 ### Right Answer
+![](https://imgur.com/ZCPjG9F.gif)
 ### Wrong Answer
+![](https://imgur.com/lmsILy7.gif)
